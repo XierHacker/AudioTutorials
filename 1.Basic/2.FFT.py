@@ -15,9 +15,7 @@ a=list(range(20000))
 b=list(range(20000,40000))
 pairs=list(zip(a,b))
 
-
-
-if __name__=="__main__":
+def compute(pairs):
     # print("pairs:",pairs)
     futures = []
     start_time = time.time()
@@ -26,8 +24,14 @@ if __name__=="__main__":
             future = pool.submit(gcd, pair)
             futures.append(future)
 
-    result=[future.result() for future in futures]
+    result = [future.result() for future in futures]
     end_time = time.time()
     duration = end_time - start_time
     print("spend:", duration)
-    print("result:",result)
+    print("result:", result)
+
+
+
+if __name__=="__main__":
+    compute(pairs)
+
