@@ -35,9 +35,9 @@ def MFCC_Delta(audio,sample_rate,alpha=0.97,n_fft=512,win_length=0.025,win_step=
     win_length_samples=int(sample_rate*win_length)          #窗长时间转窗采样点数量
     win_step_samples=int(sample_rate*win_step)              #帧移时间转帧移采样点数量
     win_hop_samples=win_length_samples-win_step_samples     #两帧重叠部分
-    print("win_length_samples:",win_length_samples)
-    print("win_step_samples:",win_step_samples)
-    print("win_hop_sample:",win_hop_samples)
+    # print("win_length_samples:",win_length_samples)
+    # print("win_step_samples:",win_step_samples)
+    # print("win_hop_sample:",win_hop_samples)
     if win_length_samples>n_fft:
         n_fft=win_length_samples
     stft_feature=librosa.core.stft(
@@ -60,7 +60,8 @@ def MFCC_Delta(audio,sample_rate,alpha=0.97,n_fft=512,win_length=0.025,win_step=
     #print("delta_2:",delta_2)
     features=np.transpose(np.concatenate((mfcc,delta_1,delta_2),0))
     features=preprocessing.scale(X=features)
-    print("features:", features)
+    #print("features:", features)
+    return features
 
 
 # def mel_fbank():
