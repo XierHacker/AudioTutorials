@@ -28,7 +28,7 @@ def compute(pairs):
     end_time = time.time()
     duration = end_time - start_time
     print("spend:", duration)
-    print("result:", result)
+    # print("result:", result)
 
 
 
