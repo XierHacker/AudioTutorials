@@ -5,7 +5,6 @@ import librosa.display
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 
-
 def pre_emphasis(x,alpha=0.95):
     '''
     对于原始波形进行预加重x'(t)=x(t)-alpha*x(t-1)
@@ -46,7 +45,7 @@ def MFCC_Delta(audio,sample_rate,alpha=0.97,n_fft=512,win_length=0.025,win_step=
         hop_length=win_hop_samples,
         win_length=win_length_samples
     )
-    print(np.abs(stft_feature).shape)
+    #print(np.abs(stft_feature).shape)
     #step2 mel
     mel=librosa.feature.melspectrogram(S=np.abs(stft_feature)**2,n_mels=n_mels)
     # print("mel:\n",mel.shape)

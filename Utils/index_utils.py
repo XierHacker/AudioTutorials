@@ -35,6 +35,20 @@ def get_mapper(index_file):
     #print("id2key:",id2key[1])
     return key2id,id2key
 
+def padding(x,max_size):
+    '''
+    按照最大步长对x进行padding
+    :param x: 待padding输入
+    :param max_size: 最大尺寸
+    :return: padding之后的结果
+    '''
+    pass
+
+
+
+
+
+
 
 if __name__=="__main__":
     #generate_index_files(key_list=timit_phns,save_path="./timit_phns.csv")
