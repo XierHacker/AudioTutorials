@@ -1,10 +1,11 @@
 import os
+import time
 import sys
 sys.path.append("../")
-import numpy as np
-import librosa
 from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import ProcessPoolExecutor
+import numpy as np
+import librosa
 import tensorflow as tf
 from Utils import dst            #feature extractor
 from Utils import index_utils
@@ -91,6 +92,7 @@ def preprocess(root_dir,save_dir,is_train=True,max_workers=None):
     # print("process_files:", process_files)
 
     #多进程处理
+    start_time=time.time()
     executor=ProcessPoolExecutor(max_workers=max_workers)
     futures=[]
     index=1
@@ -100,12 +102,10 @@ def preprocess(root_dir,save_dir,is_train=True,max_workers=None):
         # print("audio_file:",audio_file)
         # print("labels_file:",label_file)
         futures.append(executor.submit(get_features,audio_file,label_file))
-
     records=[future.result() for future in futures]
+    end_time=time.time()
     print(len(records))
-
-
-
+    print("spend: ",end_time-start_time," s")
 
 
 if __name__=="__main__":
