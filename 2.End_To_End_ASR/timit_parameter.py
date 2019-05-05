@@ -1,8 +1,7 @@
-# import sys
-# sys.path.append("../../../")
-# from Utility import statistic
-# from Utility import embed
-
+import sys
+sys.path.append("/../")
+from Utils import statistic
+#from Utility import embed
 
 #-------------------------------------------参数列表----------------------------------------------------#
 HIDDEN_UNITS_NUM=256                #隐藏层结点数量
@@ -46,7 +45,7 @@ if __name__=="__main__":
     print("test_file_list:", TEST_FILE_LIST)
     print("test_size:", TEST_SIZE)
 
-    print(CHAR_VOCAB_SIZE,CHAR_EMBEDDING_SIZE)
-    print(WORD_VOCAB_SIZE, WORD_EMBEDDING_SIZE)
-    print(CHAR_EMBEDDING.shape)
-    print(WORD_EMBEDDING.shape)
+    # print(CHAR_VOCAB_SIZE,CHAR_EMBEDDING_SIZE)
+    # print(WORD_VOCAB_SIZE, WORD_EMBEDDING_SIZE)
+    # print(CHAR_EMBEDDING.shape)
+    # print(WORD_EMBEDDING.shape)
