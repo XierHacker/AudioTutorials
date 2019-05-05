@@ -105,6 +105,7 @@ def preprocess(root_dir,save_dir,is_train=True,max_workers=None):
     records=[future.result() for future in futures]
     end_time=time.time()
     print(len(records))
+    print("record[0]",records[0])
     print("spend: ",end_time-start_time," s")
 
 
