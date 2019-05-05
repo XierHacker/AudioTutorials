@@ -213,6 +213,6 @@ def readTFRecords(tfrecords_file_list):
 
 if __name__=="__main__":
     if IS_WRITE:
-        preprocess(ROOT_DIR,SAVE_DIR,True,NUM_WORKERS)
+        preprocess(ROOT_DIR,SAVE_DIR,False,NUM_WORKERS)
     else:
         readTFRecords(tfrecords_file_list=["./timit.tfrecords"])

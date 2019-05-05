@@ -35,13 +35,6 @@ def get_mapper(index_file):
     #print("id2key:",id2key[1])
     return key2id,id2key
 
-
-
-
-
-
-
-
 if __name__=="__main__":
     #generate_index_files(key_list=timit_phns,save_path="./timit_phns.csv")
     # get_mapper(index_file="./timit_phns.csv")
