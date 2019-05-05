@@ -14,8 +14,8 @@ import warnings
 warnings.filterwarnings("ignore")
 
 NUM_WORKERS=4
-ROOT_DIR=r"D:\WorkSpace\data\TIMIT"
-SAVE_DIR=r"D:\WorkSpace\data\TIMIT\Processed"
+ROOT_DIR=r"/data1/xiekun/workspace/github/TIMIT"
+SAVE_DIR=r"/data1/xiekun/workspace/github/TIMIT_Processed/"
 
 def get_features(audioFile,labelFile=None):
     '''
