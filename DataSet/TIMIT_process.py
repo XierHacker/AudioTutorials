@@ -10,6 +10,9 @@ import tensorflow as tf
 from Utils import dst            #feature extractor
 from Utils import index_utils
 
+import warnings
+warnings.filterwarnings("ignore")
+
 NUM_WORKERS=4
 ROOT_DIR=r"D:\WorkSpace\data\TIMIT"
 SAVE_DIR=r"D:\WorkSpace\data\TIMIT\Processed"
