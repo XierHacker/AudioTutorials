@@ -39,14 +39,14 @@ class AcousticModel:
         )
 
         # [batch_size*max_time, cell_fw.output_size*2]
-        h = tf.reshape(encoder_outputs, [-1, 2 * self.hidden_units_num], "h_reshaped")
+        #h = tf.reshape(encoder_outputs, [-1, 2 * self.hidden_units_num], "h_reshaped")
 
         # fully connect layer
         logits = self.basicUtil.linear(
-            inputs=h,
+            inputs=encoder_outputs,
             units=self.class_num,
             activation=None,
-            regularizer=regularizer,
+            regularizer=None,
             keep_rate=keep_prob,
             name="logits",
             reuse=reuse
