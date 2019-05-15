@@ -9,7 +9,7 @@ from Utils.tensorflow_high_api import RnnUtil         #RNN系列的tensorflow的
 class AcousticModel:
     def __init__(self):
         self.class_num=timit_parameter.CLASS_NUM
-        self.hidden_units_num=256
+        self.hidden_units_num=512
         self.basicUtil = BasicUtil()
         self.rnnUtil = RnnUtil()
 
