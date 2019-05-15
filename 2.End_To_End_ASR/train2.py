@@ -41,6 +41,33 @@ def _parse_data(example_proto):
     label_len=tf.cast(parsed_features["label_len"],tf.int32)
     return mfcc,mfcc_len,label,label_len
 
+
+
+def dense2sparse(dense,dtype=np.int32):
+    '''
+    把稠密矩阵转为tensorflow的稀疏矩阵
+    :param dense:
+    :return:
+    '''
+    indices=[]
+    values=[]
+    dense_shape=[dense.shape[0],dense.shape[1]]
+    for i in range(dense.shape[0]):
+        for j in range(dense.shape[1]):
+            if dense[i,j]!=0:
+                indices.append([i,j])
+                values.append(dense[i,j])
+    indices=np.array(indices)
+    values=np.array(values)
+    dense_shape=np.array(dense_shape)
+    # print("indices:\n",indices)
+    # print("values:\n",values)
+    # print("dense_shape:\n",dense_shape)
+    return (indices,values,dense_shape)
+
+
+
+
 #传入的是一个tfrecords文件列表
 def train(tfrecords_file_list):
     # ----------------------------------------data set API-----------------------------------------
@@ -55,93 +82,81 @@ def train(tfrecords_file_list):
     next_element = iterator.get_next()
     # ---------------------------------------------------------------------------------------------
 
-    # 序列长度
-    mfcc_len=next_element[1]
-    mfcc_mask = tf.sequence_mask(
-        lengths=mfcc_len,
-        maxlen=timit_parameter.MAX_FRAME_SIZE,
-        name="mfcc_mask"
-    )               # 用来去掉在mfcc特征帧上padding的mask
-    label_len=next_element[3]
-    label_mask = tf.sequence_mask(
-        lengths=label_len,
-        maxlen=timit_parameter.MAX_LABEL_SIZE,
-        name="label_mask"
-    )               # 用来去掉在label序列上padding的mask
+    # mfcc_placeholder
+    mfcc_p = tf.placeholder(
+        dtype=tf.float32,
+        shape=(None, timit_parameter.MAX_FRAME_SIZE, timit_parameter.MFCC_FEATURES),
+        name="mfcc_p"
+    )
+    mfcc_len_p = tf.placeholder(
+        dtype=tf.int32,
+        shape=(None,),
+        name="mfcc_len_p"
+    )
 
-    #输入和标签
-    mfcc=next_element[0]
-    label=next_element[2]
-    # label_hot = tf.one_hot(indices=label, depth=timit_parameter.CLASS_NUM)  # one-hot转换[batch_size,max_label_size,class_num]
-    # print("shape of y_hot:", y_hot)
-    # y_masked = tf.boolean_mask(tensor=y, mask=mask, name="y_p_masked")  #去掉padding[seq_len1+seq_len2+....+lenN,]
-    # y_hot_masked = tf.boolean_mask(tensor=y_hot, mask=mask,name="y_hot_p_masked") # [seq_len1+seq_len2+....lenN,class_num]
+    # label placeholder
+    label_p = tf.placeholder(
+        dtype=tf.int32,
+        shape=(None, timit_parameter.MAX_LABEL_SIZE),
+        name="label_p"
+    )
+    label_sparse_p = tf.sparse_placeholder(
+        dtype=tf.int32,
+        name="label_sparse_p"
+    )
+    label_len_p = tf.placeholder(
+        dtype=tf.int32,
+        shape=(None,),
+        name="label_len_p"
+    )
 
     #keep prob
     keep_prob=timit_parameter.KEEP_PROB
 
-    #
-    # char_embedings=tf.constant(value=parameter.CHAR_EMBEDDING,dtype=tf.float32,name="char_embeddings")
-    # print("char_embeddings.shape", char_embedings.shape)
     # 使用regularizer控制权重
     regularizer = tf.contrib.layers.l2_regularizer(0.0001)
+
+    #建立模型
     acoustic_model=model.AcousticModel()
 
     #--------------------------------------------------logits------------------------------------------------------
-    logits=acoustic_model.forward(mfcc,mfcc_len,keep_prob,False)
+    logits=acoustic_model.forward(mfcc_p,mfcc_len_p,keep_prob,False)
     print("logits.shape:",logits.shape)
-    #logits_normal [parameter.BATCH_SIZE,max_time_stpes,parameter.CLASS_NUM]
-    # logits_normal = tf.reshape(logits,(-1, parameter.MAX_SENTENCE_SIZE, parameter.CLASS_NUM),"logits_normal")
-    #logits_masked [seq_len1+seq_len2+..+seq_lenn, 5]
-    # logits_masked = tf.boolean_mask(tensor=logits_normal,mask=mask,name="logits_masked")
-    # print("logits_masked.shape", logits_masked.shape)
+    # trans to time-major order
+    logits = tf.transpose(logits, perm=[1, 0, 2])
+    print("logits.shape:", logits.shape)
     #---------------------------------------------------------------------------------------------------------------
 
     #----------------------------------------------------CTC Loss---------------------------------------------------
-    negative_log_probability=tf.nn.ctc_loss_v2(
-        labels=label,
-        logits=logits,
-        label_length=label_len,
-        logit_length=mfcc_len,
-        logits_time_major=False,
-        blank_index=-1,
-        name="ctc_loss"
+    negative_log_probability=tf.nn.ctc_loss(
+        labels=label_sparse_p,
+        inputs=logits,
+        sequence_length=mfcc_len_p
     )
     #----------------------------------------------------------------------------------------------------------------
 
     #------------------------------------------------ prediction------------------------------------------------------
-    result=tf.nn.ctc_beam_search_decoder_v2(
-        inputs=tf.transpose(logits,(1,0,2)),
-        sequence_length=mfcc_len
-    )[0][0]
-    result_dense=tf.sparse_tensor_to_dense(sp_input=result)
-    #pred = tf.cast(tf.argmax(logits, 1), tf.int32, name="pred")  #[parameter.BATCH_SIZE*max_time, 1]
-    #pred_normal = tf.reshape(tensor=pred,shape=(-1, parameter.MAX_SENTENCE_SIZE),name="pred_normal") #[parameter.BATCH_SIZE, max_time]
-    # pred_normal = tf.reshape(tensor=decode_tags, shape=(-1, parameter.MAX_SENTENCE_SIZE), name="pred_normal")
-    # pred_masked = tf.boolean_mask(tensor=pred_normal, mask=mask, name="pred_masked")  # [seq_len1+seq_len2+....+,]
+    decoded, log_probabilities = tf.nn.ctc_beam_search_decoder(
+        inputs=logits,
+        sequence_length=mfcc_len_p
+    )
+    decoded_dense=tf.sparse_tensor_to_dense(sp_input=decoded[0])
+
+    # accracy/error rate
+    edit_distance = tf.edit_distance(
+        hypothesis=tf.cast(decoded[0], tf.int32),
+        truth=label_sparse_p
+    )
+    error = tf.reduce_mean(edit_distance)
+
     #---------------------------------------------------------------------------------------------------------------
 
-
-    # #----------------------------------------------CRF--------------------------------------------------------------
-    # log_likelihood,transition_params=tf.contrib.crf.crf_log_likelihood(
-    #     inputs=logits_normal,tag_indices=y,sequence_lengths=seq_len
-    # )
-    #
-    # # decode,potentials:[batch_size, max_seq_len, num_tags]  decode_tags:[batch_size, max_seq_len]
-    # decode_tags, best_score = tf.contrib.crf.crf_decode(
-    #     potentials=logits_normal,transition_params=transition_params,sequence_length=seq_len
-    # )
-    # #---------------------------------------------------------------------------------------------------------------
-    #
-
-    #
-    # # accracy
-    # correct_prediction = tf.equal(pred_masked, y_masked)
-    # accuracy = tf.reduce_mean(input_tensor=tf.cast(x=correct_prediction, dtype=tf.float32),name="accuracy")
-    #
     # loss
     l2_loss = tf.losses.get_regularization_loss()
     loss =tf.reduce_mean(negative_log_probability)+l2_loss
+
+
+
     #
     # # 学习率衰减
     #global_step = tf.Variable(initial_value=1, trainable=False)
@@ -159,9 +174,9 @@ def train(tfrecords_file_list):
     var_trainable_op = tf.trainable_variables()
     grads, _ = tf.clip_by_global_norm(tf.gradients(loss, var_trainable_op), 1.0)
     optimizer = tf.train.AdamOptimizer(timit_parameter.LEARNING_RATE).apply_gradients(zip(grads, var_trainable_op))
-    # optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss,global_step=global_step)
+
     init_op = tf.global_variables_initializer()
-    #
+
     #saver
     saver=tf.train.Saver()
     #
@@ -187,7 +202,8 @@ def train(tfrecords_file_list):
             train_accus = []  # training loss/accuracy in every mini-batch
             # mini batch
             for i in range(0, (timit_parameter.TRAIN_SIZE // timit_parameter.BATCH_SIZE)):
-                # mfcc, mfcc_len, label, label_len = sess.run(next_element)
+                mfcc, mfcc_len, label, label_len = sess.run(next_element)
+                label_sparse=dense2sparse(label)
                 # print("mfcc:\n", mfcc)
                 # print("mfcc.shape", mfcc.shape)
                 # print("\n")
@@ -197,21 +213,25 @@ def train(tfrecords_file_list):
                 # print("\n")
                 # print("label_len:\n", label_len)
                 # print("\n")
-                train_loss, result_,label_,_ = sess.run(fetches=[loss, result_dense,label,optimizer], )
-                print("train_loss:", train_loss)
-                print("result_:\n", result_)
-                recover(result=result_,label=label_)
+                loss_,decoded_dense_,error_,_=sess.run(
+                    fetches=[loss,decoded_dense,error,optimizer],
+                    feed_dict={mfcc_p:mfcc,mfcc_len_p:mfcc_len,label_sparse_p:label_sparse,label_len_p:label_len}
+                )
 
-                # add to list,
-                train_losses.append(train_loss);
-                # train_accus.append(train_accuracy)
-            end_time = time.time()
-            print("spend: ", (end_time - start_time) / 60, " mins")
-            print("average train loss:",sum(train_losses)/len(train_losses))
-            # print("average train accuracy:",sum(train_accus)/len(train_accus))
-            print("model saving....")
-            saver.save(sess=sess, save_path=MODEL_SAVING_PATH, global_step=epoch)
-            print("model saving done!")
+                print("loss:", loss_)
+                print("error:\n", error_)
+                recover(result=decoded_dense_,label=label)
+            #
+            #     # add to list,
+            #     train_losses.append(train_loss);
+            #     # train_accus.append(train_accuracy)
+            # end_time = time.time()
+            # print("spend: ", (end_time - start_time) / 60, " mins")
+            # print("average train loss:",sum(train_losses)/len(train_losses))
+            # # print("average train accuracy:",sum(train_accus)/len(train_accus))
+            # print("model saving....")
+            # saver.save(sess=sess, save_path=MODEL_SAVING_PATH, global_step=epoch)
+            # print("model saving done!")
 
 
 def recover(result,label):
@@ -247,3 +267,26 @@ def recover(result,label):
 
 if __name__=="__main__":
     train(tfrecords_file_list=timit_parameter.TRAIN_FILE_LIST)
+
+
+    # a=[
+    #     [
+    #         [0.1,0.2,0.3,0.4],
+    #         [0.2,0.1,0.4,0.3]
+    #     ],
+    #     [
+    #         [0.8, 0.6, 0.2, 0.1],
+    #         [0.2, 0.4, 0.6, 0.4]
+    #     ],
+    #     [
+    #         [0.2, 0.6, 0.9, 0.11],
+    #         [0.10, 0.76, 0.44, 0.23]
+    #     ],
+    # ]
+    #
+    # a_t=tf.constant(a,dtype=tf.float32)
+    # print("a_t.shape:",a_t.shape)
+    #
+    # b_t=tf.transpose(a,perm=[1,0,2])
+    # with tf.Session() as sess:
+    #     print("b_t:\n",sess.run(b_t))

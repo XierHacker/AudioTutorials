@@ -20,7 +20,7 @@ MAX_FRAME_SIZE=780
 MAX_LABEL_SIZE=70                       #不含空格
 MFCC_FEATURES=39
 
-IS_WRITE=True           #是否写入tfrecords
+IS_WRITE=False           #是否写入tfrecords
 
 def collect_files(root_dir,is_train=True):
     '''
@@ -204,7 +204,7 @@ def _parse_data(example_proto):
         features={
             "mfcc":tf.FixedLenFeature(shape=[MAX_FRAME_SIZE*MFCC_FEATURES,], dtype=tf.float32),
             "mfcc_len":tf.FixedLenFeature(shape=[], dtype=tf.int64),
-            "label":tf.FixedLenFeature(shape=[80, ], dtype=tf.int64),
+            "label":tf.FixedLenFeature(shape=[MAX_LABEL_SIZE, ], dtype=tf.int64),
             "label_len":tf.FixedLenFeature(shape=[], dtype=tf.int64)
         }
     )
@@ -253,7 +253,7 @@ if __name__=="__main__":
     if IS_WRITE:
         preprocess(file_list=TRAIN_FILE_LIST,save_path=TRAIN_SAVE_PATH,max_workers=NUM_WORKERS)
     else:
-        readTFRecords(tfrecords_file_list=["./timit.tfrecords"])
+        readTFRecords(tfrecords_file_list=[TRAIN_SAVE_PATH])
 
     # print("train_list:\n",TRAIN_FILE_LIST)
     # print("test_list:\n",TEST_FILE_LIST)
