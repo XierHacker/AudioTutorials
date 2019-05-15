@@ -36,7 +36,7 @@ def get_features(audioFile,labelFile,max_frame_size=MAX_FRAME_SIZE,max_label_siz
     audio, sample_rate = librosa.core.load(path=audioFile, sr=None)
     # print("audio:",audio)
     # print("sample_rate:",sample_rate)
-    mfcc = dst.MFCC_Delta(audio=audio, sample_rate=sample_rate)
+    mfcc = dst.MFCC_Delta2(audio=audio,sample_rate=sample_rate)
     # print("mfcc\n", mfcc.shape)
     # padding label index list
     mfcc_padded = np.zeros(shape=(max_frame_size,mfcc.shape[1]), dtype=mfcc.dtype)

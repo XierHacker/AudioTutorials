@@ -2,8 +2,11 @@ import os
 import numpy as np
 import librosa
 import librosa.display
+from python_speech_features import mfcc
+from python_speech_features import delta
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
+
 
 def pre_emphasis(x,alpha=0.95):
     '''
@@ -78,8 +81,40 @@ def MFCC_Delta(audio,sample_rate,alpha=0.97,n_fft=512,win_length=0.025,win_step=
 #     S = np.concatenate((librosa.logamplitude(mel_spectrum), logenergy), axis=0)  # np.shape(S)
 
 
+def MFCC_Delta2(audio,sample_rate,alpha=0.97,n_fft=512,win_length=0.025,win_step=0.01,n_mfcc=13):
+    '''
+    计算MFCC,一阶差分，二阶差分,最后拼在一起
+    :param audio:
+    :param sample_rate:
+    :param alpha:
+    :param n_fft:
+    :param win_length:
+    :param win_step:
+    :param n_mfcc:
+    :return:
+    '''
+    mfcc_1=mfcc(
+        signal=audio,
+        samplerate=sample_rate,
+        winlen=win_length,
+        winstep=win_step,
+        numcep=n_mfcc,
+        preemph=alpha,
+        winfunc=np.hamming
+    )
+    delta_1=delta(feat=mfcc_1,N=2)      #一阶差分
+    delta_2=delta(feat=delta_1,N=2)     #二阶差分
+    #concat
+    features=np.concatenate([mfcc_1,delta_1,delta_2],1)
+    #normalize
+    features=preprocessing.scale(features)
+    # print("features:\n", features)
+    # print("features.shape:", features.shape)
+    return features
+
+
 if __name__=="__main__":
-    audio, rate = librosa.core.load(path="../res/1.wav", sr=None)
+    audio, rate = librosa.core.load(path="../THCHS_30/data_thchs30/data/A2_0.wav", sr=None)
     print("audio:\n", audio)
     print("rate:\n", rate)
-    MFCC_Delta(audio=audio,sample_rate=rate)
+    MFCC_Delta2(audio=audio,sample_rate=rate)

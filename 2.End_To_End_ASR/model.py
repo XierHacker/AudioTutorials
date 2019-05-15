@@ -47,7 +47,7 @@ class AcousticModel:
             units=self.class_num,
             activation=None,
             regularizer=None,
-            keep_rate=keep_prob,
+            keep_rate=1.0,
             name="logits",
             reuse=reuse
         )
