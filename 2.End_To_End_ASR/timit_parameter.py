@@ -10,7 +10,7 @@ HIDDEN_UNITS_NUM2=256               #隐藏层2结点数量
 MAX_LABEL_SIZE=80                   #label序列的最大长度为80
 MAX_FRAME_SIZE=520                  #语音特征帧的最大长度
 MFCC_FEATURES=39                    #mfcc的特征维度
-CLASS_NUM=28+1                      #通过字母表示的类别数量，28+"BLINK"
+CLASS_NUM=27+1+1                      #通过字母表示的类别数量，28+"BLINK"
 
 #字向量样本数和维度信息
 # CHAR_EMBEDDING=embed.readEmbeddings(file="../../../Embeddings/char_vec.txt")
@@ -19,7 +19,7 @@ CLASS_NUM=28+1                      #通过字母表示的类别数量，28+"BLI
 # WORD_VOCAB_SIZE,WORD_EMBEDDING_SIZE=statistic.CharVecInfo(char_vec_file="../../../Embeddings/word_vec.txt")
 #INPUT_SIZE=CHAR_EMBEDDING_SIZE                     #嵌入字向量维度,和输入大小应当一样
 
-LEARNING_RATE=0.1                 #学习率
+LEARNING_RATE=0.001                 #学习率
 DECAY_RATE=0.9                      #学习率衰减
 MAX_EPOCH=15                        #最大迭代次数
 BATCH_SIZE=30                       #batch大小

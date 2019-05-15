@@ -14,12 +14,93 @@ warnings.filterwarnings("ignore")
 
 NUM_WORKERS=4
 ROOT_DIR=r"D:\WorkSpace\data\TIMIT"
-SAVE_DIR=r"D:\WorkSpace\data\TIMIT\Processed"
-MAX_FRAME_SIZE=520
-MAX_LABEL_SIZE=80
+TRAIN_SAVE_PATH="./timit_train.tfrecords"
+TEST_SAVE_PATH="./timit_test.tfrecords"
+MAX_FRAME_SIZE=780
+MAX_LABEL_SIZE=70                       #不含空格
 MFCC_FEATURES=39
 
 IS_WRITE=True           #是否写入tfrecords
+
+def collect_files(root_dir,is_train=True):
+    '''
+    收集根目录下面所有有效文件
+    :param root_dir:
+    :return:
+    '''
+    process_dir = ""
+    process_files = []
+    num_samples = 0
+    if is_train:
+        process_dir = os.path.join(root_dir, "TRAIN")
+    else:
+        process_dir = os.path.join(root_dir, "TEST")
+    print("process_dir:", process_dir)
+    result = os.walk(top=process_dir)  # iter all structure
+    # 收集所有待处理文件名
+    for top_dir, dirs, files in result:
+        # print("top_dir:",top_dir)
+        # print("dirs:",dirs)
+        # print("files:",files)
+        # print("\n\n")
+        if len(files) == 0:        #means no files
+            continue
+        for file in files:
+            file_list = os.path.splitext(file)
+            # print("file_list:",file_list)
+            # .WAV
+            if ".WAV" in file_list:
+                if "SA" in file_list[0]:      # 去掉SA开头的(SA相关文件影响结果准确性)
+                    continue
+                process_files.append(os.path.join(top_dir, file_list[0]))
+                num_samples += 1
+    print("num_samples:", num_samples)
+    # print("process_files:", process_files)
+    return process_files
+
+TRAIN_FILE_LIST=collect_files(ROOT_DIR,True)
+TEST_FILE_LIST=collect_files(ROOT_DIR,False)
+
+
+def getMaxSize(file_list):
+    '''
+    这个是一个辅助函数，用来获取信息
+        从根目录得到提取特征之后的最大特征长度和label长度
+    :param file_list:
+    :return:
+    '''
+    max_frame_size = 0
+    max_label_size = 0
+    #get mapper
+    key2id, id2key = index_utils.get_mapper(index_file="../IndexFiles/en_char.csv")
+    # print("key2id:", key2id)
+    for file in file_list:
+        with open(file=file+".WRD", encoding="utf-8", errors="ignore") as file_label:
+            str=""
+            lines = file_label.readlines()
+            for line in lines:
+                line_list = line.strip().split(sep=" ")
+                for char in line_list[-1]:
+                    str+=char
+            # print("str:",str)
+            # labels = file_label.readlines()[0].strip()
+            # index = indexLabel(labels=labels, label_map=char2id)
+            # # print("index:",index,len(index))
+            if len(str) > max_label_size:
+                max_label_size = len(str)
+
+        # get audios
+        audio, rate = librosa.core.load(file+".WAV", sr=None)
+        # print("audio:\n", audio)
+        # print("rate:\n", rate)
+        features = dst.MFCC_Delta2(audio=audio, sample_rate=rate)
+        size = features.shape[0]
+        # print("size:",size)
+        if size > max_frame_size:
+            max_frame_size = size
+    print("max_frame_size:", max_frame_size)
+    print("max_label_size:", max_label_size)
+
 
 def get_features(audioFile,labelFile,max_frame_size=MAX_FRAME_SIZE,max_label_size=MAX_LABEL_SIZE):
     '''
@@ -48,15 +129,16 @@ def get_features(audioFile,labelFile,max_frame_size=MAX_FRAME_SIZE,max_label_siz
     label_in = open(file=labelFile)
     lines = label_in.readlines()
     index_list = []
+    str = ""
     for line in lines:
         line_list = line.strip().split(sep=" ")
         # print("line_list:", line_list)
         for char in line_list[-1]:
+            str+=char
             index_list.append(key2id[char])
-        index_list.append(0)
     label_in.close()
-    index_list.pop()  # 去掉最后一个多余0
-    # print("index_list:",index_list)
+    #print("str:",str)
+    #print("index_list:",index_list)
     #padding label index list
     index_list_padded = np.zeros(shape=(max_label_size,), dtype=type(index_list[0]))
     index_list_padded[:len(index_list)] = index_list[:]
@@ -66,81 +148,36 @@ def get_features(audioFile,labelFile,max_frame_size=MAX_FRAME_SIZE,max_label_siz
     return features
 
 
-def preprocess(root_dir,save_dir,is_train=True,max_workers=None):
+def preprocess(file_list,save_path,max_workers=1):
     '''
-    预处理函数，把root_dir下面的所有音频找到提取特征并转化为tfrecords
-    :param root_dir:TIMIT根目录
-    :param save_dir:tfrecords保存目录
-    :param is_train:是否是训练集
-    :param max_workers:最大CPU使用数量
+    预处理函数，把file_list下面的所有音频找到提取特征并转化为tfrecords
+    :param file_list: 文件列表
+    :param save_path: tfrecord保存路径
+    :param max_workers: 最大CPU使用数量
     :return:
     '''
-    process_dir=""
-    process_files=[]
-    num_samples = 0
-    if is_train:
-        process_dir = os.path.join(root_dir, "TRAIN")
-    else:
-        process_dir=os.path.join(root_dir,"TEST")
-    print("process_dir:",process_dir)
-    result=os.walk(top=process_dir)         #iter all structure
-    #收集所有待处理文件名
-    for top_dir, dirs, files in result:
-        # print("top_dir:",top_dir)
-        # print("dirs:",dirs)
-        # print("files:",files)
-        # print("\n\n")
-        if len(files) == 0:
-            continue
-        for file in files:
-            file_list = os.path.splitext(file)
-            # print("file_list:",file_list)
-            # .WAV
-            if ".WAV" in file_list:
-                # 去掉SA开头的(SA相关文件影响结果准确性)
-                if "SA" in file_list[0]:
-                    continue
-                process_files.append(os.path.join(top_dir, file_list[0]))
-                num_samples += 1
-
-    print("num_samples:", num_samples)
-    # print("process_files:", process_files)
 
     #多进程处理得到特征
     start_time=time.time()
     executor=ProcessPoolExecutor(max_workers=max_workers)
     futures=[]
     index=1
-    for file in process_files:
-        #if index>10:
+    for file in file_list:
+        # if index>10:
         #    break
         audio_file=file+".WAV"
         label_file=file+".WRD"
-        # print("audio_file:",audio_file)
-        # print("labels_file:",label_file)
         futures.append(executor.submit(get_features,audio_file,label_file))
         index+=1
     records=[future.result() for future in futures]
     end_time=time.time()
 
-    #print(len(records))
-    #print("record[0]",records[0])
+    print(len(records))
+    #print("record[0]:\n",records[0])
     print("spend: ", end_time - start_time, " s")
-    #infomation
-    print("------------information--------------------")
-    max_audio=0
-    max_label=0
-    for record in records:
-        if record[1]>max_audio:
-            max_audio=record[1]
-        if record[3]>max_label:
-            max_label=record[3]
-    print("max_audio:",max_audio)
-    print("max_labels:",max_label)
-    print("-------------------------------------------")
 
     #写入到tfrecords
-    writer=tf.python_io.TFRecordWriter(path="./timit.tfrecords")
+    writer=tf.python_io.TFRecordWriter(path=save_path)
     for record in records:
         example = tf.train.Example(
             features=tf.train.Features(
@@ -153,6 +190,7 @@ def preprocess(root_dir,save_dir,is_train=True,max_workers=None):
             )
         )
         writer.write(record=example.SerializeToString())
+    writer.close()
 
 
 def _parse_data(example_proto):
@@ -213,6 +251,13 @@ def readTFRecords(tfrecords_file_list):
 
 if __name__=="__main__":
     if IS_WRITE:
-        preprocess(ROOT_DIR,SAVE_DIR,False,NUM_WORKERS)
+        preprocess(file_list=TRAIN_FILE_LIST,save_path=TRAIN_SAVE_PATH,max_workers=NUM_WORKERS)
     else:
         readTFRecords(tfrecords_file_list=["./timit.tfrecords"])
+
+    # print("train_list:\n",TRAIN_FILE_LIST)
+    # print("test_list:\n",TEST_FILE_LIST)
+    # getMaxSize(TRAIN_FILE_LIST)
+    # getMaxSize(TEST_FILE_LIST)
+
+
