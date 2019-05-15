@@ -18,15 +18,13 @@ class AcousticModel:
         lstm_forward1 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_forward1", reuse)
         lstm_forward2 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_forward2", reuse)
         lstm_forward3 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_forward3", reuse)
-        lstm_forward4 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_forward4", reuse)
-        lstm_forward = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_forward1, lstm_forward2,lstm_forward3,lstm_forward4])
+        lstm_forward = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_forward1, lstm_forward2,lstm_forward3])
 
         # backward part
         lstm_backward1 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_backward1", reuse)
         lstm_backward2 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_backward2", reuse)
         lstm_backward3 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_backward3", reuse)
-        lstm_backward4 = self.rnnUtil.createLSTMCell(self.hidden_units_num, keep_prob, "lstm_backward4", reuse)
-        lstm_backward = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_backward1, lstm_backward2,lstm_backward3,lstm_backward4])
+        lstm_backward = tf.nn.rnn_cell.MultiRNNCell(cells=[lstm_backward1, lstm_backward2,lstm_backward3])
 
         # LSTM编码过程
         # encoder_outputs是拼接之后的输出，这里暂时用不到encoder_states
