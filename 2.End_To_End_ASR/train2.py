@@ -198,8 +198,8 @@ def train(tfrecords_file_list):
             print("Epoch:", epoch)
             # time evaluation
             start_time = time.time()
-            train_losses = [];
-            train_accus = []  # training loss/accuracy in every mini-batch
+            losses = []
+            accus = []      # training loss/accuracy in every mini-batch
             # mini batch
             for i in range(0, (timit_parameter.TRAIN_SIZE // timit_parameter.BATCH_SIZE)):
                 mfcc, mfcc_len, label, label_len = sess.run(next_element)
@@ -218,20 +218,20 @@ def train(tfrecords_file_list):
                     feed_dict={mfcc_p:mfcc,mfcc_len_p:mfcc_len,label_sparse_p:label_sparse,label_len_p:label_len}
                 )
 
-                print("loss:", loss_)
-                print("error:\n", error_)
-                recover(result=decoded_dense_,label=label)
-            #
-            #     # add to list,
-            #     train_losses.append(train_loss);
-            #     # train_accus.append(train_accuracy)
-            # end_time = time.time()
-            # print("spend: ", (end_time - start_time) / 60, " mins")
-            # print("average train loss:",sum(train_losses)/len(train_losses))
-            # # print("average train accuracy:",sum(train_accus)/len(train_accus))
-            # print("model saving....")
-            # saver.save(sess=sess, save_path=MODEL_SAVING_PATH, global_step=epoch)
-            # print("model saving done!")
+                #print("loss:", loss_)
+                #print("error:\n", error_)
+                #recover(result=decoded_dense_,label=label)
+
+                # add to list,
+                losses.append(loss_)
+                accus.append(error_)
+            end_time = time.time()
+            print("spend: ", (end_time - start_time) / 60, " mins")
+            print("average train loss:",sum(losses)/len(losses))
+            print("average train errors:",sum(accus)/len(accus))
+            print("model saving....")
+            saver.save(sess=sess, save_path=MODEL_SAVING_PATH, global_step=epoch)
+            print("model saving done!")
 
 
 def recover(result,label):
