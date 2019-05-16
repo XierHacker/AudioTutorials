@@ -20,7 +20,7 @@ MAX_FRAME_SIZE=780
 MAX_LABEL_SIZE=70                       #不含空格
 MFCC_FEATURES=39
 
-IS_WRITE=False           #是否写入tfrecords
+IS_WRITE=True           #是否写入tfrecords
 
 def collect_files(root_dir,is_train=True):
     '''
@@ -251,9 +251,10 @@ def readTFRecords(tfrecords_file_list):
 
 if __name__=="__main__":
     if IS_WRITE:
-        preprocess(file_list=TRAIN_FILE_LIST,save_path=TRAIN_SAVE_PATH,max_workers=NUM_WORKERS)
+        #preprocess(file_list=TRAIN_FILE_LIST,save_path=TRAIN_SAVE_PATH,max_workers=NUM_WORKERS)
+        preprocess(file_list=TEST_FILE_LIST,save_path=TEST_SAVE_PATH,max_workers=NUM_WORKERS)
     else:
-        readTFRecords(tfrecords_file_list=[TRAIN_SAVE_PATH])
+        readTFRecords(tfrecords_file_list=[TEST_SAVE_PATH])
 
     # print("train_list:\n",TRAIN_FILE_LIST)
     # print("test_list:\n",TEST_FILE_LIST)

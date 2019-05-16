@@ -31,8 +31,8 @@ TRAIN_FILE_LIST=["../DataSet/timit_train.tfrecords"]
 TRAIN_SIZE=statistic.getTFRecordsListAmount(tfFileList=TRAIN_FILE_LIST)
 
 #测试集样本数目
-TEST_FILE_LIST=["../DataSet/timit_train.tfrecords"]
-TEST_SIZE=statistic.getTFRecordsListAmount(tfFileList=TRAIN_FILE_LIST)
+TEST_FILE_LIST=["../DataSet/timit_test.tfrecords"]
+TEST_SIZE=statistic.getTFRecordsListAmount(tfFileList=TEST_FILE_LIST)
 
 MODEL_SAVING_DIR="./saved_models/epoch_"            #模型存储目录
 

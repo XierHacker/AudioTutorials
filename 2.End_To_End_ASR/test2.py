@@ -18,7 +18,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"]='2'
 
 GRAPH_DEF_SAVING_DIR="./checkpoints/"
 GRAPH_DEF_SAVING_NAME="lstm.pbtxt"
-CHECKPOINT_SAVING_PATH="./checkpoints/lstm.ckpt-14"
+CHECKPOINT_SAVING_PATH="./checkpoints/lstm.ckpt-15"
 
 def _parse_data(example_proto):
     '''
@@ -245,4 +245,4 @@ def recover(result,label):
 
 
 if __name__=="__main__":
-    test(tfrecords_file_list=timit_parameter.TRAIN_FILE_LIST)
+    test(tfrecords_file_list=timit_parameter.TEST_FILE_LIST)
